@@ -1,0 +1,11 @@
+[package]
+name = "astel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.5.1"  }
+serde = { version = "1.0.144", features = ["derive"] }
+
+[dev-dependencies]
+tokio = { version = "1.17.0", features = ["macros", "tokio-macros", "rt-multi-thread"] }

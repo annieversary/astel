@@ -1,0 +1,7 @@
+* astel
+
+astel is an opinionated administration panel for [[https://docs.rs/axum][axum]], based on [[https://nova.laravel.com/][laravel nova]]
+
+the objective is to be really *really* low boilerplate
+
+it's currently work in progress
