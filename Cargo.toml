@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.5.1"  }
 serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
 
 [dev-dependencies]
 tokio = { version = "1.17.0", features = ["macros", "tokio-macros", "rt-multi-thread"] }

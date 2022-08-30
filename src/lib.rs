@@ -1,8 +1,12 @@
+#[macro_use]
+extern crate serde;
+
 use axum::{body::Body, extract::RequestParts, response::IntoResponse, Router};
 use serde::Serialize;
 
 mod router_extension;
 mod routes;
+mod table_serializer;
 mod type_list;
 
 pub use router_extension::RouterExt;
@@ -47,10 +51,27 @@ impl<L: HList> Astel<L> {
 
 #[axum::async_trait]
 pub trait AstelResource: Sized {
-    /// If the extractor fails it'll use this "rejection" type. A rejection is
-    /// a kind of error that can be converted into a response.
-    type Rejection: IntoResponse;
+    type Error: IntoResponse;
 
-    /// Perform the extraction.
-    async fn from_request(req: &mut RequestParts<Body>) -> Result<Vec<Self>, Self::Rejection>;
+    type Db: Send + Sync + Clone + 'static;
+
+    type ID;
+
+    /// Returns the ID for this model
+    ///
+    /// This should uniquely identify the model
+    fn id(&self) -> &Self::ID;
+
+    /// Extracts the db for this resource out of the Request
+    ///
+    /// By default uses the `Extension<Db>` extractor
+    async fn get_db(req: &mut RequestParts<Body>) -> Result<&mut Self::Db, Self::Error> {
+        Ok(req.extensions_mut().get_mut::<Self::Db>().unwrap())
+    }
+
+    /// get all the resources out of the request body
+    async fn load(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error>;
+
+    /// deletes the model with this id
+    async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error>;
 }

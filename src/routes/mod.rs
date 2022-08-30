@@ -1,17 +1,16 @@
-use crate::AstelResource;
+use crate::{table_serializer::to_table, AstelResource};
 use axum::{
     body::Body,
     extract::{FromRequest, RequestParts},
     response::{Html, IntoResponse},
     routing::{get, MethodRouter},
-    Json,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-pub(crate) async fn view_resource<T: Serialize>(ts: Getter<T>) -> impl IntoResponse {
-    // TODO display all the resources in a table
-
-    Json(ts.0)
+pub(crate) async fn view_resource<'de, T: Serialize + Deserialize<'de>>(
+    ts: Getter<T>,
+) -> impl IntoResponse {
+    Html(to_table(&ts.0))
 }
 
 pub(crate) fn index(path: &str, names: Vec<&str>) -> MethodRouter {
@@ -32,11 +31,14 @@ pub(crate) struct Getter<T>(Vec<T>);
 #[axum::async_trait]
 impl<T> FromRequest<Body> for Getter<T>
 where
-    T: AstelResource,
+    T: AstelResource + Send,
 {
-    type Rejection = <T as AstelResource>::Rejection;
+    // TODO write wrapper for this error
+    type Rejection = <T as AstelResource>::Error;
 
     async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
-        <T as AstelResource>::from_request(req).await.map(Self)
+        let db = <T as AstelResource>::get_db(req).await?;
+
+        <T as AstelResource>::load(db).await.map(Self)
     }
 }

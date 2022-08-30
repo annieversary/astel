@@ -1,7 +1,6 @@
 use astel::{Astel, AstelResource, RouterExt};
 use axum::{
-    body::Body,
-    extract::{Extension, RequestParts},
+    extract::Extension,
     http::StatusCode,
     response::{Html, IntoResponse},
     routing::{get, post},
@@ -66,11 +65,20 @@ struct User {
 
 #[axum::async_trait]
 impl AstelResource for User {
-    type Rejection = StatusCode;
+    type Error = StatusCode;
+    type Db = Db;
+    type ID = String;
 
-    async fn from_request(req: &mut RequestParts<Body>) -> Result<Vec<Self>, Self::Rejection> {
-        let db = req.extensions().get::<Db>().unwrap();
+    fn id(&self) -> &Self::ID {
+        &self.username
+    }
 
+    async fn load(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error> {
         Ok(db.read().unwrap().values().cloned().collect())
+    }
+
+    async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error> {
+        db.write().unwrap().remove(id);
+        Ok(())
     }
 }
