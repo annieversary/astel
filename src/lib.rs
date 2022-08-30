@@ -1,15 +1,15 @@
 use axum::{body::Body, extract::RequestParts, response::IntoResponse, Router};
 use serde::Serialize;
 
+mod router_extension;
 mod routes;
 mod type_list;
 
+pub use router_extension::RouterExt;
 use routes::index;
 use type_list::{Cons, HList, Nil};
 
-// TODO add an extension method on Router that nests an Astel on `path`
-
-pub struct Astel<L: HList> {
+pub struct Astel<L> {
     list: L,
     path: String,
 }

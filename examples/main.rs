@@ -1,4 +1,4 @@
-use astel::{Astel, AstelResource};
+use astel::{Astel, AstelResource, RouterExt};
 use axum::{
     body::Body,
     extract::{Extension, RequestParts},
@@ -28,12 +28,10 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/users", post(create_user))
-        .nest(
-            "/astel",
+        .astel(
             Astel::new("/astel")
                 .register_type::<User>("users")
-                .register_type::<User>("other")
-                .build(),
+                .register_type::<User>("other"),
         )
         .layer(Extension(db));
 
