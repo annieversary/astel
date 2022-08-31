@@ -39,7 +39,7 @@ impl HList for Nil {
     }
 
     fn router(&self) -> Router {
-        Router::<Body>::new()
+        Router::<(), Body>::new()
     }
 }
 impl<'de, T, R> HList for Cons<T, R>
@@ -57,12 +57,21 @@ where
         self.rest
             .router()
             .route(&format!("/{}", self.name), get(view_resource::<T>))
+            .route(&format!("/{}/", self.name), get(view_resource::<T>))
             .route(
                 &format!("/{}/edit", self.name),
                 get(edit_resource_get::<T>).post(edit_resource_post::<T>),
             )
             .route(
+                &format!("/{}/edit/", self.name),
+                get(edit_resource_get::<T>).post(edit_resource_post::<T>),
+            )
+            .route(
                 &format!("/{}/delete", self.name),
+                get(delete_resource_get::<T>).post(delete_resource_post::<T>),
+            )
+            .route(
+                &format!("/{}/delete/", self.name),
                 get(delete_resource_get::<T>).post(delete_resource_post::<T>),
             )
     }

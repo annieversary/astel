@@ -1,9 +1,7 @@
 #[macro_use]
 extern crate serde;
 
-use axum::{
-    body::Body, extract::RequestParts, response::IntoResponse, routing::get, Extension, Router,
-};
+use axum::{http::request::Parts, response::IntoResponse, routing::get, Extension, Router};
 use config::AstelConfig;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -51,6 +49,7 @@ impl<L: HList> Astel<L> {
         self.list
             .router()
             .route("/", get(index))
+            // TODO add a fallback 404 page
             .layer(Extension(config))
     }
 }
@@ -71,8 +70,8 @@ pub trait AstelResource: Sized {
     /// Extracts the db for this resource out of the Request
     ///
     /// By default uses the `Extension<Db>` extractor
-    async fn get_db(req: &mut RequestParts<Body>) -> Result<&mut Self::Db, Self::Error> {
-        Ok(req.extensions_mut().get_mut::<Self::Db>().unwrap())
+    async fn get_db(parts: &mut Parts) -> Result<&mut Self::Db, Self::Error> {
+        Ok(parts.extensions.get_mut::<Self::Db>().unwrap())
     }
 
     /// get all the resources out of the request body
