@@ -30,6 +30,8 @@ async fn main() {
         .astel(
             Astel::new("/astel")
                 .register_type::<User>("users")
+                // you can add a type twice !
+                // idk why you would, but you can :)
                 .register_type::<User>("other"),
         )
         .layer(Extension(db));

@@ -35,10 +35,15 @@ pub(crate) async fn delete_resource_get<'de, T: AstelResource + Serialize + Dese
     Html("<form method=\"POST\"><button type=\"submit\">delete</button></form>")
 }
 
-pub(crate) async fn delete_resource_post<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    _request: Request<Body>,
+pub(crate) async fn delete_resource_post<
+    'de,
+    T: Send + AstelResource + Serialize + Deserialize<'de>,
+>(
+    q: Q<T>,
 ) -> impl IntoResponse {
-    todo!()
+    // let db = <T as AstelResource>::get_db(&mut req).await?;
+
+    // <T as AstelResource>::delete(db, &q.0.id).await
 }
 
 pub(crate) async fn index(Extension(config): Extension<AstelConfig>) -> impl IntoResponse {
@@ -76,7 +81,7 @@ pub(crate) struct GetOne<T>(T);
 pub(crate) struct Id<I> {
     pub id: I,
 }
-type Q<I> = Query<Id<I>>;
+type Q<I> = Query<Id<<I as AstelResource>::ID>>;
 
 #[axum::async_trait]
 impl<T> FromRequest<Body> for GetOne<T>
@@ -87,7 +92,7 @@ where
     type Rejection = <T as AstelResource>::Error;
 
     async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
-        let id = Q::<T::ID>::from_request(req).await.unwrap().0.id;
+        let id = Q::<T>::from_request(req).await.unwrap().0.id;
 
         let db = <T as AstelResource>::get_db(req).await?;
 
