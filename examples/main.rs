@@ -73,8 +73,12 @@ impl AstelResource for User {
         &self.username
     }
 
-    async fn load(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error> {
+    async fn load_all(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error> {
         Ok(db.read().unwrap().values().cloned().collect())
+    }
+
+    async fn load_one(db: &mut Self::Db, id: &Self::ID) -> Result<Option<Self>, Self::Error> {
+        Ok(db.read().unwrap().get(id).cloned())
     }
 
     async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error> {

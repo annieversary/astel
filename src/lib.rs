@@ -1,9 +1,13 @@
 #[macro_use]
 extern crate serde;
 
-use axum::{body::Body, extract::RequestParts, response::IntoResponse, Router};
-use serde::Serialize;
+use axum::{
+    body::Body, extract::RequestParts, response::IntoResponse, routing::get, Extension, Router,
+};
+use config::AstelConfig;
+use serde::{de::DeserializeOwned, Serialize};
 
+mod config;
 mod router_extension;
 mod routes;
 mod table_serializer;
@@ -38,14 +42,16 @@ impl<L: HList> Astel<L> {
         }
     }
 
-    pub fn names(&self) -> Vec<&str> {
+    pub fn names(&self) -> Vec<String> {
         self.list.names()
     }
 
     pub fn build(self) -> Router {
+        let config = AstelConfig::new(self.path.clone(), self.names());
         self.list
             .router()
-            .route("/", index(&self.path, self.names()))
+            .route("/", get(index))
+            .layer(Extension(config))
     }
 }
 
@@ -55,7 +61,7 @@ pub trait AstelResource: Sized {
 
     type Db: Send + Sync + Clone + 'static;
 
-    type ID;
+    type ID: Serialize + DeserializeOwned + Send + Sync;
 
     /// Returns the ID for this model
     ///
@@ -70,7 +76,10 @@ pub trait AstelResource: Sized {
     }
 
     /// get all the resources out of the request body
-    async fn load(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error>;
+    async fn load_all(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error>;
+
+    /// get one the resources out of the request body
+    async fn load_one(db: &mut Self::Db, id: &Self::ID) -> Result<Option<Self>, Self::Error>;
 
     /// deletes the model with this id
     async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error>;

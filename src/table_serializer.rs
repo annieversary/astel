@@ -1,15 +1,19 @@
-use std::{collections::HashMap, fmt::Display};
-
+use crate::{routes::Id, AstelResource};
 use serde::{
     de::{self, Deserialize, Deserializer, Visitor},
     Serialize,
 };
+use std::{collections::HashMap, fmt::Display};
 
-pub(crate) fn to_table<'de, T: Serialize + Deserialize<'de>>(t: &[T]) -> String {
+pub(crate) fn to_table<'de, T: AstelResource + Serialize + Deserialize<'de>>(
+    t: &[T],
+    path: &str,
+) -> String {
     let headers = struct_fields::<T>()
         .iter()
         .map(|s| wrap("th", s))
         .collect::<String>();
+    let headers = wrap("tr", wrap("th", "edit") + &wrap("th", "delete") + &headers);
 
     let values = t
         .iter()
@@ -27,7 +31,11 @@ pub(crate) fn to_table<'de, T: Serialize + Deserialize<'de>>(t: &[T]) -> String 
                 })
                 .collect::<String>();
 
-            wrap("tr", v)
+            // NOTE: i think this is wrong cause this is &ID, which might have a different serialization from ID
+            let id = &serde_urlencoded::to_string(Id { id: t.id() }).unwrap();
+            let edit = wrap("td", link("edit", format!(".{path}/edit?{id}")));
+            let delete = wrap("td", link("delete", format!(".{path}/delete?{id}")));
+            wrap("tr", edit + &delete + &v)
         })
         .collect::<String>();
 
@@ -36,6 +44,9 @@ pub(crate) fn to_table<'de, T: Serialize + Deserialize<'de>>(t: &[T]) -> String 
 
 fn wrap(c: &str, d: impl Display) -> String {
     format!("<{c}>{d}</{c}>")
+}
+fn link(d: impl Display, link: impl Display) -> String {
+    format!("<a href=\"{link}\">{d}</a>")
 }
 
 pub fn struct_fields<'de, T>() -> &'static [&'static str]
