@@ -1,11 +1,5 @@
-use crate::{
-    routes::{
-        delete_resource_get, delete_resource_post, edit_resource_get, edit_resource_post,
-        view_resource,
-    },
-    AstelResource,
-};
-use axum::{body::Body, routing::get, Router};
+use crate::{routes::add_routes_for, AstelResource};
+use axum::{body::Body, Router};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
@@ -54,25 +48,6 @@ where
     }
 
     fn router(&self) -> Router {
-        self.rest
-            .router()
-            .route(&format!("/{}", self.name), get(view_resource::<T>))
-            .route(&format!("/{}/", self.name), get(view_resource::<T>))
-            .route(
-                &format!("/{}/edit", self.name),
-                get(edit_resource_get::<T>).post(edit_resource_post::<T>),
-            )
-            .route(
-                &format!("/{}/edit/", self.name),
-                get(edit_resource_get::<T>).post(edit_resource_post::<T>),
-            )
-            .route(
-                &format!("/{}/delete", self.name),
-                get(delete_resource_get::<T>).post(delete_resource_post::<T>),
-            )
-            .route(
-                &format!("/{}/delete/", self.name),
-                get(delete_resource_get::<T>).post(delete_resource_post::<T>),
-            )
+        add_routes_for::<T>(&self.name, self.rest.router())
     }
 }

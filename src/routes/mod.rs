@@ -4,59 +4,38 @@ use axum::{
     extract::{FromRequestParts, Query},
     http::{request::Parts, Request},
     response::{Html, IntoResponse},
-    Extension,
+    routing::get,
+    Extension, Router,
 };
 use serde::{Deserialize, Serialize};
 
-pub(crate) async fn view_resource<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    ts: GetAll<T>,
-    request: Request<Body>,
-) -> impl IntoResponse {
-    Html(to_table(&ts.0, request.uri().path()))
-}
+mod delete;
+mod edit;
+pub(crate) mod index;
+mod view;
 
-pub(crate) async fn edit_resource_get<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    t: GetOne<T>,
-    request: Request<Body>,
-) -> impl IntoResponse {
-    Html(to_table(&[t.0], request.uri().path()))
-}
-
-pub(crate) async fn edit_resource_post<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    _t: GetOne<T>,
-    _request: Request<Body>,
-) -> impl IntoResponse {
-    todo!()
-}
-
-pub(crate) async fn delete_resource_get<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    _request: Request<Body>,
-) -> impl IntoResponse {
-    Html("<form method=\"POST\"><button type=\"submit\">delete</button></form>")
-}
-
-pub(crate) async fn delete_resource_post<
-    'de,
-    T: Send + AstelResource + Serialize + Deserialize<'de>,
->(
-    q: Q<T>,
-    req: Request<Body>,
-) -> impl IntoResponse {
-    let (mut parts, _) = req.into_parts();
-    let db = <T as AstelResource>::get_db(&mut parts).await?;
-
-    <T as AstelResource>::delete(db, &q.0.id).await
-}
-
-pub(crate) async fn index(Extension(config): Extension<AstelConfig>) -> impl IntoResponse {
-    let path = &config.path;
-    let names = config
-        .names
-        .iter()
-        .map(|name| format!("<a href=\"{path}/{name}\">{name}</a>"))
-        .collect::<String>();
-
-    Html(names)
+pub fn add_routes_for<'de, T>(name: &str, r: Router) -> Router
+where
+    T: AstelResource + 'static + Send + Serialize + Deserialize<'de>,
+{
+    r.route(&format!("/{}", name), get(view::view_resource::<T>))
+        .route(&format!("/{}/", name), get(view::view_resource::<T>))
+        .route(
+            &format!("/{}/edit", name),
+            get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
+        )
+        .route(
+            &format!("/{}/edit/", name),
+            get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
+        )
+        .route(
+            &format!("/{}/delete", name),
+            get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
+        )
+        .route(
+            &format!("/{}/delete/", name),
+            get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
+        )
 }
 
 #[derive(Deserialize, Serialize)]

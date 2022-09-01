@@ -48,7 +48,7 @@ impl<L: HList> Astel<L> {
         let config = AstelConfig::new(self.path.clone(), self.names());
         self.list
             .router()
-            .route("/", get(index))
+            .route("/", get(index::index))
             // TODO add a fallback 404 page
             .layer(Extension(config))
     }
