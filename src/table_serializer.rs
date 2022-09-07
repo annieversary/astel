@@ -33,8 +33,8 @@ pub(crate) fn to_table<'de, T: AstelResource + Serialize + Deserialize<'de>>(
 
             // NOTE: i think this is wrong cause this is &ID, which might have a different serialization from ID
             let id = &serde_urlencoded::to_string(Id { id: t.id() }).unwrap();
-            let edit = wrap("td", link("edit", format!(".{path}/edit?{id}")));
-            let delete = wrap("td", link("delete", format!(".{path}/delete?{id}")));
+            let edit = wrap("td", link("edit", format!("{path}/edit?{id}")));
+            let delete = wrap("td", link("delete", format!("{path}/delete?{id}")));
             wrap("tr", edit + &delete + &v)
         })
         .collect::<String>();

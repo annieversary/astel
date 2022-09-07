@@ -1,12 +1,9 @@
 use super::*;
 
-pub(crate) async fn index(Extension(config): Extension<AstelConfig>) -> impl IntoResponse {
-    let path = &config.path;
-    let names = config
-        .names
-        .iter()
-        .map(|name| format!("<a href=\"{path}/{name}\">{name}</a>"))
-        .collect::<String>();
-
-    Html(names)
+pub(crate) async fn index_resource<'de, T: AstelResource + Serialize + Deserialize<'de>>(
+    ts: GetAll<T>,
+    conf: Extension<AstelConfig>,
+    resconf: Extension<ResourceConfig>,
+) -> impl IntoResponse {
+    Html(to_table(&ts.0, &format!("{}/{}", conf.path, resconf.name)))
 }

@@ -13,7 +13,7 @@ mod table_serializer;
 mod type_list;
 
 pub use router_extension::RouterExt;
-use routes::index;
+use routes::home;
 use type_list::{Cons, HList, Nil};
 
 pub use conforming::ToForm;
@@ -54,7 +54,7 @@ impl<L: HList> Astel<L> {
         let config = AstelConfig::new(self.path.clone(), self.names());
         self.list
             .router()
-            .route("/", get(index::index))
+            .route("/", get(home::home))
             // TODO add a fallback 404 page
             .layer(Extension(config))
     }

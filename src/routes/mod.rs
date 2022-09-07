@@ -1,4 +1,8 @@
-use crate::{config::AstelConfig, table_serializer::to_table, AstelResource};
+use crate::{
+    config::{AstelConfig, ResourceConfig},
+    table_serializer::to_table,
+    AstelResource,
+};
 use axum::{
     body::Body,
     extract::{FromRequestParts, Query},
@@ -12,40 +16,44 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 mod delete;
 mod edit;
-pub(crate) mod index;
+pub(crate) mod home;
+mod index;
 mod new;
-mod view;
 
 pub fn add_routes_for<T>(name: &str, r: Router) -> Router
 where
     T: AstelResource + ToForm + 'static + Send + Serialize + DeserializeOwned,
 {
-    r.route(&format!("/{}", name), get(view::view_resource::<T>))
-        .route(&format!("/{}/", name), get(view::view_resource::<T>))
-        .route(
-            &format!("/{}/new", name),
-            get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
-        )
-        .route(
-            &format!("/{}/new/", name),
-            get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
-        )
-        .route(
-            &format!("/{}/edit", name),
-            get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
-        )
-        .route(
-            &format!("/{}/edit/", name),
-            get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
-        )
-        .route(
-            &format!("/{}/delete", name),
-            get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
-        )
-        .route(
-            &format!("/{}/delete/", name),
-            get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
-        )
+    r.nest(
+        &format!("/{name}"),
+        Router::new()
+            .route("/", get(index::index_resource::<T>))
+            .route(
+                "/new",
+                get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
+            )
+            .route(
+                "/new/",
+                get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
+            )
+            .route(
+                "/edit",
+                get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
+            )
+            .route(
+                "/edit/",
+                get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
+            )
+            .route(
+                "/delete",
+                get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
+            )
+            .route(
+                "/delete/",
+                get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
+            )
+            .layer(Extension(ResourceConfig::new(name))),
+    )
 }
 
 // extractors for routes

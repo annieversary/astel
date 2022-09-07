@@ -1,4 +1,4 @@
-use axum::extract::Form;
+use axum::{extract::Form, response::Redirect};
 use conforming::ToForm;
 use serde::de::DeserializeOwned;
 
@@ -13,9 +13,15 @@ pub(crate) async fn edit_resource_get<'de, T: AstelResource + ToForm>(
 }
 
 pub(crate) async fn edit_resource_post<T: AstelResource + DeserializeOwned>(
+    conf: Extension<AstelConfig>,
+    resconf: Extension<ResourceConfig>,
     q: Q<T>,
     DbExtract(mut db): DbExtract<T>,
     Form(t): Form<T>,
 ) -> impl IntoResponse {
-    T::edit(&mut db, &q.0.id, t).await
+    T::edit(&mut db, &q.0.id, t).await?;
+
+    let path = &conf.path;
+    let name = &resconf.name;
+    Ok::<_, T::Error>(Redirect::to(&format!("{path}/{name}")))
 }

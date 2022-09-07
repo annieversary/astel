@@ -62,6 +62,7 @@ async fn create_user(Extension(db): Extension<Db>, Json(user): Json<User>) -> im
 #[derive(Serialize, Deserialize, Clone, ToForm)]
 struct User {
     username: String,
+    #[input(input_type = "email")]
     email: String,
 }
 
