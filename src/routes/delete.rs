@@ -11,10 +11,7 @@ pub(crate) async fn delete_resource_post<
     T: Send + AstelResource + Serialize + Deserialize<'de>,
 >(
     q: Q<T>,
-    req: Request<Body>,
+    DbExtract(mut db): DbExtract<T>,
 ) -> impl IntoResponse {
-    let (mut parts, _) = req.into_parts();
-    let db = <T as AstelResource>::get_db(&mut parts).await?;
-
-    <T as AstelResource>::delete(db, &q.0.id).await
+    <T as AstelResource>::delete(&mut db, &q.0.id).await
 }

@@ -1,15 +1,21 @@
+use axum::extract::Form;
+use conforming::ToForm;
+use serde::de::DeserializeOwned;
+
 use super::*;
 
-pub(crate) async fn edit_resource_get<'de, T: AstelResource + Serialize + Deserialize<'de>>(
+pub(crate) async fn edit_resource_get<'de, T: AstelResource + ToForm>(
     t: GetOne<T>,
-    request: Request<Body>,
 ) -> impl IntoResponse {
-    Html(to_table(&[t.0], request.uri().path()))
+    let html = <T as ToForm>::serialize(&t.0).unwrap().build();
+
+    Html(html)
 }
 
-pub(crate) async fn edit_resource_post<'de, T: AstelResource + Serialize + Deserialize<'de>>(
-    _t: GetOne<T>,
-    _request: Request<Body>,
+pub(crate) async fn edit_resource_post<T: AstelResource + DeserializeOwned>(
+    q: Q<T>,
+    DbExtract(mut db): DbExtract<T>,
+    Form(t): Form<T>,
 ) -> impl IntoResponse {
-    todo!()
+    T::edit(&mut db, &q.0.id, t).await
 }

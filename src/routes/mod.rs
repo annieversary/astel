@@ -7,19 +7,29 @@ use axum::{
     routing::get,
     Extension, Router,
 };
-use serde::{Deserialize, Serialize};
+use conforming::ToForm;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 mod delete;
 mod edit;
 pub(crate) mod index;
+mod new;
 mod view;
 
-pub fn add_routes_for<'de, T>(name: &str, r: Router) -> Router
+pub fn add_routes_for<T>(name: &str, r: Router) -> Router
 where
-    T: AstelResource + 'static + Send + Serialize + Deserialize<'de>,
+    T: AstelResource + ToForm + 'static + Send + Serialize + DeserializeOwned,
 {
     r.route(&format!("/{}", name), get(view::view_resource::<T>))
         .route(&format!("/{}/", name), get(view::view_resource::<T>))
+        .route(
+            &format!("/{}/new", name),
+            get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
+        )
+        .route(
+            &format!("/{}/new/", name),
+            get(new::new_resource_get::<T>).post(new::new_resource_post::<T>),
+        )
         .route(
             &format!("/{}/edit", name),
             get(edit::edit_resource_get::<T>).post(edit::edit_resource_post::<T>),
@@ -37,6 +47,8 @@ where
             get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
         )
 }
+
+// extractors for routes
 
 #[derive(Deserialize, Serialize)]
 pub(crate) struct Id<I> {
@@ -56,9 +68,9 @@ where
     type Rejection = <T as AstelResource>::Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let db = <T as AstelResource>::get_db(parts).await?;
+        let mut db = <T as AstelResource>::get_db(parts).await?;
 
-        <T as AstelResource>::load_all(db).await.map(Self)
+        <T as AstelResource>::load_all(&mut db).await.map(Self)
     }
 }
 
@@ -77,12 +89,29 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let id = Q::<T>::from_request_parts(parts, state).await.unwrap().0.id;
 
-        let db = <T as AstelResource>::get_db(parts).await?;
+        let mut db = <T as AstelResource>::get_db(parts).await?;
 
-        <T as AstelResource>::load_one(db, &id)
+        <T as AstelResource>::load_one(&mut db, &id)
             .await
             .transpose()
             .unwrap()
             .map(Self)
+    }
+}
+
+/// Extracts based on the `id` query param
+pub(crate) struct DbExtract<T: AstelResource>(T::Db);
+
+#[axum::async_trait]
+impl<S, T> FromRequestParts<S> for DbExtract<T>
+where
+    T: AstelResource + Send,
+    S: Send + Sync,
+{
+    // TODO write wrapper for this error
+    type Rejection = <T as AstelResource>::Error;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        <T as AstelResource>::get_db(parts).await.map(Self)
     }
 }

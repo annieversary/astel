@@ -8,6 +8,7 @@ axum = { version = "0.6.0-rc.1"  }
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = "1.0.85"
 serde_urlencoded = "0.7.1"
+conforming = { git = "https://github.com/annieversary/conforming", rev = "831de9c0991e5a09a8f1132905aeb7da8cea4cea" }
 
 [dev-dependencies]
 tokio = { version = "1.17.0", features = ["macros", "tokio-macros", "rt-multi-thread"] }

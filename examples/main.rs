@@ -1,4 +1,4 @@
-use astel::{Astel, AstelResource, RouterExt};
+use astel::{Astel, AstelResource, RouterExt, ToForm};
 use axum::{
     extract::Extension,
     http::StatusCode,
@@ -29,10 +29,10 @@ async fn main() {
         .route("/users", post(create_user))
         .astel(
             Astel::new("/astel")
-                .register_type::<User>("users")
+                .register_resource::<User>("users")
                 // you can add a type twice !
                 // idk why you would, but you can :)
-                .register_type::<User>("other"),
+                .register_resource::<User>("other"),
         )
         .layer(Extension(db));
 
@@ -59,7 +59,7 @@ async fn create_user(Extension(db): Extension<Db>, Json(user): Json<User>) -> im
     StatusCode::CREATED
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, ToForm)]
 struct User {
     username: String,
     email: String,
@@ -83,8 +83,23 @@ impl AstelResource for User {
         Ok(db.read().unwrap().get(id).cloned())
     }
 
+    async fn new(db: &mut Self::Db, t: Self) -> Result<Self::ID, Self::Error> {
+        let mut db = db.write().unwrap();
+        let id = t.username.clone();
+        db.insert(id.clone(), t);
+        Ok(id)
+    }
+
     async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error> {
         db.write().unwrap().remove(id);
+        Ok(())
+    }
+
+    async fn edit(db: &mut Self::Db, id: &Self::ID, t: Self) -> Result<(), Self::Error> {
+        let mut db = db.write().unwrap();
+        if let Some(a) = db.get_mut(id) {
+            *a = t;
+        }
         Ok(())
     }
 }

@@ -1,6 +1,7 @@
 use crate::{routes::add_routes_for, AstelResource};
 use axum::{body::Body, Router};
-use serde::{Deserialize, Serialize};
+use conforming::ToForm;
+use serde::{de::DeserializeOwned, Serialize};
 use std::marker::PhantomData;
 
 // based on https://docs.rs/hlist/0.1.2/hlist/
@@ -36,10 +37,10 @@ impl HList for Nil {
         Router::<(), Body>::new()
     }
 }
-impl<'de, T, R> HList for Cons<T, R>
+impl<T, R> HList for Cons<T, R>
 where
     R: HList,
-    T: AstelResource + 'static + Send + Serialize + Deserialize<'de>,
+    T: AstelResource + ToForm + 'static + Send + Serialize + DeserializeOwned,
 {
     fn names(&self) -> Vec<String> {
         let mut n = self.rest.names();

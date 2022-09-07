@@ -3,17 +3,20 @@ extern crate serde;
 
 use axum::{http::request::Parts, response::IntoResponse, routing::get, Extension, Router};
 use config::AstelConfig;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 mod config;
 mod router_extension;
 mod routes;
+
 mod table_serializer;
 mod type_list;
 
 pub use router_extension::RouterExt;
 use routes::index;
 use type_list::{Cons, HList, Nil};
+
+pub use conforming::ToForm;
 
 pub struct Astel<L> {
     list: L,
@@ -30,9 +33,12 @@ impl Astel<Nil> {
 }
 
 impl<L: HList> Astel<L> {
-    pub fn register_type<T>(self, name: impl ToString) -> Astel<Cons<T, L>>
+    /// registers a resource
+    ///
+    /// resources must implement `AstelResource`, `ToForm`, and Serialize/Deserialize
+    pub fn register_resource<'de, T>(self, name: impl ToString) -> Astel<Cons<T, L>>
     where
-        T: Serialize + AstelResource + 'static + Send,
+        T: Serialize + Deserialize<'de> + AstelResource + ToForm + 'static + Send,
     {
         Astel {
             list: self.list.push::<T>(name.to_string()),
@@ -40,7 +46,7 @@ impl<L: HList> Astel<L> {
         }
     }
 
-    pub fn names(&self) -> Vec<String> {
+    pub(crate) fn names(&self) -> Vec<String> {
         self.list.names()
     }
 
@@ -54,12 +60,16 @@ impl<L: HList> Astel<L> {
     }
 }
 
+/// trait for resources that want to be displayed in astel
 #[axum::async_trait]
 pub trait AstelResource: Sized {
+    // TODO maybe we skip this and make our own error type?
     type Error: IntoResponse;
 
+    /// Type of the db
     type Db: Send + Sync + Clone + 'static;
 
+    /// Type of the model's id
     type ID: Serialize + DeserializeOwned + Send + Sync;
 
     /// Returns the ID for this model
@@ -70,16 +80,24 @@ pub trait AstelResource: Sized {
     /// Extracts the db for this resource out of the Request
     ///
     /// By default uses the `Extension<Db>` extractor
-    async fn get_db(parts: &mut Parts) -> Result<&mut Self::Db, Self::Error> {
-        Ok(parts.extensions.get_mut::<Self::Db>().unwrap())
+    async fn get_db(parts: &mut Parts) -> Result<Self::Db, Self::Error> {
+        Ok(parts.extensions.get::<Self::Db>().unwrap().clone())
     }
 
-    /// get all the resources out of the request body
+    /// Loads all the resources
     async fn load_all(db: &mut Self::Db) -> Result<Vec<Self>, Self::Error>;
 
-    /// get one the resources out of the request body
+    /// Loads the resource with the given id
     async fn load_one(db: &mut Self::Db, id: &Self::ID) -> Result<Option<Self>, Self::Error>;
 
-    /// deletes the model with this id
+    /// Creates a new model
+    async fn new(db: &mut Self::Db, t: Self) -> Result<Self::ID, Self::Error>;
+
+    /// Deletes the model with the provided id
     async fn delete(db: &mut Self::Db, id: &Self::ID) -> Result<(), Self::Error>;
+
+    /// Edits the model with the provided id
+    ///
+    /// Should fail or do nothing if no model with the provided ID
+    async fn edit(db: &mut Self::Db, id: &Self::ID, t: Self) -> Result<(), Self::Error>;
 }
