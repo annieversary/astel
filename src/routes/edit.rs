@@ -14,7 +14,6 @@ pub(crate) async fn edit_resource_get<'de, T: AstelResource + ToForm>(
 
 pub(crate) async fn edit_resource_post<T: AstelResource + DeserializeOwned>(
     conf: Extension<AstelConfig>,
-    resconf: Extension<ResourceConfig>,
     q: Q<T>,
     DbExtract(mut db): DbExtract<T>,
     Form(t): Form<T>,
@@ -22,6 +21,5 @@ pub(crate) async fn edit_resource_post<T: AstelResource + DeserializeOwned>(
     T::edit(&mut db, &q.0.id, t).await?;
 
     let path = &conf.path;
-    let name = &resconf.name;
-    Ok::<_, T::Error>(Redirect::to(&format!("{path}/{name}")))
+    Ok::<_, T::Error>(Redirect::to(&format!("{path}/{}", T::NAME)))
 }

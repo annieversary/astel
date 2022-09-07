@@ -11,25 +11,23 @@ pub struct Nil;
 #[derive(Clone, Debug, Default)]
 pub struct Cons<T, R> {
     t: PhantomData<T>,
-    name: String,
     rest: R,
 }
 
 pub trait HList: Sized {
-    fn push<T>(self, name: String) -> Cons<T, Self> {
+    fn push<T>(self) -> Cons<T, Self> {
         Cons {
             t: PhantomData::<T>,
-            name,
             rest: self,
         }
     }
 
-    fn names(&self) -> Vec<String>;
+    fn names(&self) -> Vec<&'static str>;
 
     fn router(&self) -> Router;
 }
 impl HList for Nil {
-    fn names(&self) -> Vec<String> {
+    fn names(&self) -> Vec<&'static str> {
         vec![]
     }
 
@@ -42,13 +40,13 @@ where
     R: HList,
     T: AstelResource + ToForm + 'static + Send + Serialize + DeserializeOwned,
 {
-    fn names(&self) -> Vec<String> {
+    fn names(&self) -> Vec<&'static str> {
         let mut n = self.rest.names();
-        n.push(self.name.clone());
+        n.push(T::NAME);
         n
     }
 
     fn router(&self) -> Router {
-        add_routes_for::<T>(&self.name, self.rest.router())
+        add_routes_for::<T>(T::NAME, self.rest.router())
     }
 }

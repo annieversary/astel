@@ -1,8 +1,4 @@
-use crate::{
-    config::{AstelConfig, ResourceConfig},
-    table_serializer::to_table,
-    AstelResource,
-};
+use crate::{config::AstelConfig, table_serializer::to_table, AstelResource};
 use axum::{
     body::Body,
     extract::{FromRequestParts, Query},
@@ -51,8 +47,7 @@ where
             .route(
                 "/delete/",
                 get(delete::delete_resource_get::<T>).post(delete::delete_resource_post::<T>),
-            )
-            .layer(Extension(ResourceConfig::new(name))),
+            ),
     )
 }
 

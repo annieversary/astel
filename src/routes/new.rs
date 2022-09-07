@@ -12,13 +12,11 @@ pub(crate) async fn new_resource_get<T: AstelResource + ToForm>() -> impl IntoRe
 
 pub(crate) async fn new_resource_post<T: AstelResource + DeserializeOwned + Send>(
     conf: Extension<AstelConfig>,
-    resconf: Extension<ResourceConfig>,
     DbExtract(mut db): DbExtract<T>,
     Form(t): Form<T>,
 ) -> impl IntoResponse {
     T::new(&mut db, t).await?;
 
     let path = &conf.path;
-    let name = &resconf.name;
-    Ok::<_, T::Error>(Redirect::to(&format!("{path}/{name}")))
+    Ok::<_, T::Error>(Redirect::to(&format!("{path}/{}", T::NAME)))
 }

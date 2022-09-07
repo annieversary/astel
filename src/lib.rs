@@ -36,17 +36,17 @@ impl<L: HList> Astel<L> {
     /// registers a resource
     ///
     /// resources must implement `AstelResource`, `ToForm`, and Serialize/Deserialize
-    pub fn register_resource<'de, T>(self, name: impl ToString) -> Astel<Cons<T, L>>
+    pub fn register_resource<'de, T>(self) -> Astel<Cons<T, L>>
     where
         T: Serialize + Deserialize<'de> + AstelResource + ToForm + 'static + Send,
     {
         Astel {
-            list: self.list.push::<T>(name.to_string()),
+            list: self.list.push::<T>(),
             path: self.path,
         }
     }
 
-    pub(crate) fn names(&self) -> Vec<String> {
+    pub(crate) fn names(&self) -> Vec<&'static str> {
         self.list.names()
     }
 
@@ -71,6 +71,8 @@ pub trait AstelResource: Sized {
 
     /// Type of the model's id
     type ID: Serialize + DeserializeOwned + Send + Sync;
+
+    const NAME: &'static str;
 
     /// Returns the ID for this model
     ///

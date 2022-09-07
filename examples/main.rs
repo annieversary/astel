@@ -27,13 +27,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/users", post(create_user))
-        .astel(
-            Astel::new("/astel")
-                .register_resource::<User>("users")
-                // you can add a type twice !
-                // idk why you would, but you can :)
-                .register_resource::<User>("other"),
-        )
+        .astel(Astel::new("/astel").register_resource::<User>())
         .layer(Extension(db));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -59,6 +53,8 @@ async fn create_user(Extension(db): Extension<Db>, Json(user): Json<User>) -> im
     StatusCode::CREATED
 }
 
+// astel stuff
+
 #[derive(Serialize, Deserialize, Clone, ToForm)]
 struct User {
     username: String,
@@ -71,6 +67,8 @@ impl AstelResource for User {
     type Error = StatusCode;
     type Db = Db;
     type ID = String;
+
+    const NAME: &'static str = "users";
 
     fn id(&self) -> &Self::ID {
         &self.username
