@@ -3,8 +3,8 @@ use axum::{
     extract::Extension,
     http::StatusCode,
     response::{Html, IntoResponse},
-    routing::{get, post},
-    Json, Router,
+    routing::get,
+    Form, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -25,8 +25,7 @@ async fn main() {
     );
 
     let app = Router::new()
-        .route("/", get(index))
-        .route("/users", post(create_user))
+        .route("/", get(index).post(create_user))
         .astel(Astel::new("/astel").register_resource::<User>())
         .layer(Extension(db));
 
@@ -43,11 +42,22 @@ type Db = Arc<RwLock<HashMap<String, User>>>;
 async fn index(Extension(db): Extension<Db>) -> impl IntoResponse {
     let count = db.read().unwrap().len();
     Html(format!(
-        "<a href=\"/astel\">admin panel</a><p>there are {count} users</p>"
+        r#"<html>
+    <head>
+        <title>astel demo</title>
+    </head>
+    <body>
+        <a href="/astel">admin panel</a>
+
+        <h1>This is the main page</h1>
+        <p>there are {count} users registered</p>
+    </body>
+</html>
+"#
     ))
 }
 
-async fn create_user(Extension(db): Extension<Db>, Json(user): Json<User>) -> impl IntoResponse {
+async fn create_user(Extension(db): Extension<Db>, Form(user): Form<User>) -> impl IntoResponse {
     db.write().unwrap().insert(user.username.clone(), user);
 
     StatusCode::CREATED
@@ -68,7 +78,7 @@ impl AstelResource for User {
     type Db = Db;
     type ID = String;
 
-    const NAME: &'static str = "users";
+    const NAME: &'static str = "Users";
 
     fn id(&self) -> &Self::ID {
         &self.username
@@ -95,10 +105,8 @@ impl AstelResource for User {
     }
 
     async fn edit(db: &mut Self::Db, id: &Self::ID, t: Self) -> Result<(), Self::Error> {
-        let mut db = db.write().unwrap();
-        if let Some(a) = db.get_mut(id) {
-            *a = t;
-        }
-        Ok(())
+        db.write().unwrap().remove(id);
+
+        Self::new(db, t).await.map(|_| ())
     }
 }

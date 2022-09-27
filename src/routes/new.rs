@@ -4,10 +4,22 @@ use serde::de::DeserializeOwned;
 
 use super::*;
 
-pub(crate) async fn new_resource_get<T: AstelResource + ToForm>() -> impl IntoResponse {
-    let html = T::to_form().build();
+pub(crate) async fn new_resource_get<T: AstelResource + ToForm>(
+    Extension(_config): Extension<AstelConfig>,
+    Extension(html): Extension<HtmlContextBuilder>,
+) -> impl IntoResponse {
+    let form = T::to_form().with_submit("Create").build();
 
-    Html(html)
+    let content = html! {
+        h1 {
+            (T::NAME)
+            " - Create"
+        }
+
+        (PreEscaped(form));
+    };
+
+    html.build(content)
 }
 
 pub(crate) async fn new_resource_post<T: AstelResource + DeserializeOwned + Send>(

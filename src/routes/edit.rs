@@ -6,10 +6,24 @@ use super::*;
 
 pub(crate) async fn edit_resource_get<'de, T: AstelResource + ToForm>(
     t: GetOne<T>,
+    Extension(_config): Extension<AstelConfig>,
+    Extension(html): Extension<HtmlContextBuilder>,
 ) -> impl IntoResponse {
-    let html = <T as ToForm>::serialize(&t.0).unwrap().build();
+    let form = <T as ToForm>::serialize(&t.0)
+        .unwrap()
+        .with_submit("Edit")
+        .build();
 
-    Html(html)
+    let content = html! {
+        h1 {
+            (T::NAME)
+            " - Edit"
+        }
+
+        (PreEscaped(form));
+    };
+
+    html.build(content)
 }
 
 pub(crate) async fn edit_resource_post<T: AstelResource + DeserializeOwned>(

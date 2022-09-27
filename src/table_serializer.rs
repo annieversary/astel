@@ -39,7 +39,10 @@ pub(crate) fn to_table<'de, T: AstelResource + Serialize + Deserialize<'de>>(
         })
         .collect::<String>();
 
-    wrap("table", headers + &values)
+    format!(
+        r#"<table class="resource-table">{}</table>"#,
+        headers + &values
+    )
 }
 
 fn wrap(c: &str, d: impl Display) -> String {

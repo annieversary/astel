@@ -1,11 +1,17 @@
 #[macro_use]
 extern crate serde;
 
-use axum::{http::request::Parts, response::IntoResponse, routing::get, Extension, Router};
+use axum::{
+    http::request::Parts, middleware::from_fn, response::IntoResponse, routing::get, Extension,
+    Router,
+};
 use config::AstelConfig;
+use html::html_context_middleware;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+mod assets;
 mod config;
+mod html;
 mod router_extension;
 mod routes;
 
@@ -55,7 +61,9 @@ impl<L: HList> Astel<L> {
         self.list
             .router()
             .route("/", get(home::home))
+            .route("/css/main.css", get(assets::main_css))
             // TODO add a fallback 404 page
+            .layer(from_fn(html_context_middleware))
             .layer(Extension(config))
     }
 }
