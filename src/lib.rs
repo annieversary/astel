@@ -39,18 +39,25 @@ impl Astel {
 }
 
 impl Astel {
-    /// registers a resource
+    /// Registers a resource
     ///
-    /// resources must implement `AstelResource`, `ToForm`, and Serialize/Deserialize
+    /// # Panics
+    ///
+    /// Panics if the `AstelResource::NAME` constant is already in use by another registered resource.
     pub fn register_resource<T>(mut self) -> Astel
     where
         T: Serialize + DeserializeOwned + AstelResource + ToForm + 'static + Send,
     {
+        if self.names.contains(&T::NAME) {
+            panic!("Name {} is already in use on a resource", T::NAME)
+        }
+
         self.names.push(T::NAME);
         self.router = add_routes_for::<T>(T::NAME, self.router);
         self
     }
 
+    /// Builds a router containing routes for all registered resources
     pub fn build(self) -> Router {
         let config = AstelConfig::new(self.path.clone(), self.names);
         self.router
