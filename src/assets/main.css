@@ -12,6 +12,8 @@ body {
 .categories {
     padding: 1rem 3rem;
     background-color: #ccc;
+    display: flex;
+    flex-direction: column;
 }
 
 .container {

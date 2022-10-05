@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.6.0-rc.1"  }
+axum = { version = "0.6.0-rc.1" }
 serde = { version = "1.0.144", features = ["derive"] }
 serde_json = "1.0.85"
 serde_urlencoded = "0.7.1"
 
-conforming = { git = "https://github.com/annieversary/conforming", rev = "3a543d658a52433a03aa02a103ec88a9611dda23" }
-# conforming = { path = "../conforming" }
-
+conforming = { git = "https://github.com/annieversary/conforming", rev = "8b508c9668cb12536cea51f45d64b0ba1b6efa46" }
 maud = { git = "https://github.com/annieversary/maud", rev = "e39cef7b14485d05146ea1e3da1d4b3c4e21aa9e" }
 
 [dev-dependencies]

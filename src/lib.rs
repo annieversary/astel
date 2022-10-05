@@ -7,7 +7,7 @@ use axum::{
 };
 use config::AstelConfig;
 use html::html_context_middleware;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 
 mod assets;
 mod config;
@@ -16,50 +16,44 @@ mod router_extension;
 mod routes;
 
 mod table_serializer;
-mod type_list;
 
 pub use router_extension::RouterExt;
-use routes::home;
-use type_list::{Cons, HList, Nil};
+use routes::{add_routes_for, home};
 
 pub use conforming::ToForm;
 
-pub struct Astel<L> {
-    list: L,
+#[derive(Default)]
+pub struct Astel {
     path: String,
+    router: Router,
+    names: Vec<&'static str>,
 }
 
-impl Astel<Nil> {
+impl Astel {
     pub fn new(path: impl ToString) -> Self {
         Self {
-            list: Nil,
             path: path.to_string(),
+            ..Default::default()
         }
     }
 }
 
-impl<L: HList> Astel<L> {
+impl Astel {
     /// registers a resource
     ///
     /// resources must implement `AstelResource`, `ToForm`, and Serialize/Deserialize
-    pub fn register_resource<'de, T>(self) -> Astel<Cons<T, L>>
+    pub fn register_resource<T>(mut self) -> Astel
     where
-        T: Serialize + Deserialize<'de> + AstelResource + ToForm + 'static + Send,
+        T: Serialize + DeserializeOwned + AstelResource + ToForm + 'static + Send,
     {
-        Astel {
-            list: self.list.push::<T>(),
-            path: self.path,
-        }
-    }
-
-    pub(crate) fn names(&self) -> Vec<&'static str> {
-        self.list.names()
+        self.names.push(T::NAME);
+        self.router = add_routes_for::<T>(T::NAME, self.router);
+        self
     }
 
     pub fn build(self) -> Router {
-        let config = AstelConfig::new(self.path.clone(), self.names());
-        self.list
-            .router()
+        let config = AstelConfig::new(self.path.clone(), self.names);
+        self.router
             .route("/", get(home::home))
             .route("/css/main.css", get(assets::main_css))
             // TODO add a fallback 404 page

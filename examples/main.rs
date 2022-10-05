@@ -26,8 +26,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(index).post(create_user))
-        .astel(Astel::new("/astel").register_resource::<User>())
-        .layer(Extension(db));
+        .layer(Extension(db.clone()))
+        .astel(Astel::new("/astel").register_resource::<User>(), db);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on http://127.0.0.1:3000");

@@ -40,6 +40,7 @@ impl HtmlContextBuilder {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) struct HtmlContext {
     pub content: Markup,
     pub config: AstelConfig,
@@ -62,22 +63,26 @@ impl HtmlContext {
     }
 
     /// sets the description for this page
+    #[allow(dead_code)]
     pub fn with_description(mut self, s: impl ToString) -> Self {
         self.description = Some(s.to_string());
         self
     }
+    #[allow(dead_code)]
     pub fn get_description(&self) -> Option<&str> {
         self.description.as_deref()
     }
 
     /// add a piece of markdown to a section, similar to laravel's `@push`
     /// usually used for adding `script`s at the bottom of the page
+    #[allow(dead_code)]
     pub fn section_append(mut self, key: impl ToString, m: Markup) -> Self {
         let section = self.sections.entry(key.to_string()).or_default();
         section.push(m);
         self
     }
 
+    #[allow(dead_code)]
     pub fn section_get(&self, key: &str) -> Markup {
         let section: &[Markup] = self
             .sections

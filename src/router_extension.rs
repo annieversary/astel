@@ -1,14 +1,14 @@
-use axum::Router;
+use axum::{Extension, Router};
 
-use crate::{type_list::HList, Astel};
+use crate::Astel;
 
 pub trait RouterExt {
-    fn astel<T: HList>(self, astel: Astel<T>) -> Self;
+    fn astel<DB: Send + Sync + Clone + 'static>(self, astel: Astel, db: DB) -> Self;
 }
 
 impl RouterExt for Router {
-    fn astel<T: HList>(self, astel: Astel<T>) -> Self {
+    fn astel<DB: Send + Sync + Clone + 'static>(self, astel: Astel, db: DB) -> Self {
         let path = astel.path.clone();
-        self.nest(&path, astel.build())
+        self.nest(&path, astel.build().layer(Extension(db)))
     }
 }
