@@ -1,15 +1,19 @@
 use std::{ops::Deref, sync::Arc};
 
+#[derive(Default)]
 pub(crate) struct AstelConfigInner {
     pub path: String,
     pub names: Vec<&'static str>,
+
+    pub css_path: Option<String>,
+    pub title: Option<String>,
 }
 
 #[derive(Clone)]
 pub(crate) struct AstelConfig(Arc<AstelConfigInner>);
 impl AstelConfig {
-    pub fn new(path: String, names: Vec<&'static str>) -> Self {
-        Self(Arc::new(AstelConfigInner { path, names }))
+    pub fn new(inner: AstelConfigInner) -> Self {
+        Self(Arc::new(inner))
     }
 }
 impl Deref for AstelConfig {

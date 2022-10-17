@@ -16,6 +16,9 @@ pub(crate) async fn home(
             }
             "."
         }
+        p {
+            "not yet actually tho"
+        }
     };
 
     html.build(content).with_title("Astel - Home")

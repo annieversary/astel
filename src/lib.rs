@@ -5,7 +5,7 @@ use axum::{
     http::request::Parts, middleware::from_fn, response::IntoResponse, routing::get, Extension,
     Router,
 };
-use config::AstelConfig;
+use config::{AstelConfig, AstelConfigInner};
 use html::html_context_middleware;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -24,15 +24,17 @@ pub use conforming::ToForm;
 
 #[derive(Default)]
 pub struct Astel {
-    path: String,
     router: Router,
-    names: Vec<&'static str>,
+    config: AstelConfigInner,
 }
 
 impl Astel {
     pub fn new(path: impl ToString) -> Self {
         Self {
-            path: path.to_string(),
+            config: AstelConfigInner {
+                path: path.to_string(),
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
@@ -48,24 +50,40 @@ impl Astel {
     where
         T: Serialize + DeserializeOwned + AstelResource + ToForm + 'static + Send,
     {
-        if self.names.contains(&T::NAME) {
+        if self.config.names.contains(&T::NAME) {
             panic!("Name {} is already in use on a resource", T::NAME)
         }
 
-        self.names.push(T::NAME);
+        self.config.names.push(T::NAME);
         self.router = add_routes_for::<T>(T::NAME, self.router);
         self
     }
 
     /// Builds a router containing routes for all registered resources
     pub fn build(self) -> Router {
-        let config = AstelConfig::new(self.path.clone(), self.names);
+        let config = AstelConfig::new(self.config);
         self.router
             .route("/", get(home::home))
             .route("/css/main.css", get(assets::main_css))
             // TODO add a fallback 404 page
             .layer(from_fn(html_context_middleware))
             .layer(Extension(config))
+    }
+
+    /// Will use a custom css that is available at the provided path
+    ///
+    /// `<link rel="stylesheet" href="{path}" type="text/css">`
+    ///
+    /// By default uses a simple css.
+    pub fn with_css_path(mut self, path: impl ToString) -> Self {
+        self.config.css_path = Some(path.to_string());
+        self
+    }
+
+    /// Sets the title in the sidebar, by default "Astel"
+    pub fn with_title(mut self, title: impl ToString) -> Self {
+        self.config.title = Some(title.to_string());
+        self
     }
 }
 

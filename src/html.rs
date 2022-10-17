@@ -97,6 +97,11 @@ impl HtmlContext {
 
 impl IntoResponse for HtmlContext {
     fn into_response(self) -> Response {
+        macro_rules! conf {
+            ($i:ident, $e:expr) => {
+                self.config.$i.as_deref().unwrap_or($e)
+            };
+        }
         let m = html! {
             (DOCTYPE)
             head {
@@ -104,15 +109,14 @@ impl IntoResponse for HtmlContext {
                     (self.get_title())
                 }
 
-                // TODO allow customization
-                link rel="stylesheet" href="/astel/css/main.css" type="text/css";
+                link rel="stylesheet" href=(conf!(css_path, "/astel/css/main.css")) type="text/css";
             }
             body {
                 .categories {
                     h2 {
                         // TODO change this
                         a href=(&self.config.path) {
-                            "Astel"
+                            (conf!(title, "Astel"))
                         }
                     }
 

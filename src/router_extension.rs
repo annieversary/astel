@@ -8,7 +8,7 @@ pub trait RouterExt {
 
 impl RouterExt for Router {
     fn astel<DB: Send + Sync + Clone + 'static>(self, astel: Astel, db: DB) -> Self {
-        let path = astel.path.clone();
+        let path = astel.config.path.clone();
         self.nest(&path, astel.build().layer(Extension(db)))
     }
 }
