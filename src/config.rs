@@ -7,6 +7,7 @@ pub(crate) struct AstelConfigInner {
 
     pub css_path: Option<String>,
     pub title: Option<String>,
+    pub js_paths: Vec<String>,
 }
 
 #[derive(Clone)]

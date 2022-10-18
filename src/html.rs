@@ -129,6 +129,10 @@ impl IntoResponse for HtmlContext {
                 div.container {
                     (self.content)
                 }
+
+                @for path in &self.config.js_paths {
+                    script src=(path) {}
+                }
             }
         };
 

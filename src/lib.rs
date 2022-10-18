@@ -85,6 +85,12 @@ impl Astel {
         self.config.title = Some(title.to_string());
         self
     }
+
+    /// Adds JS script at the bottom of the body. Multiple can be added.
+    pub fn with_js(mut self, path: impl ToString) -> Self {
+        self.config.js_paths.push(path.to_string());
+        self
+    }
 }
 
 /// trait for resources that want to be displayed in astel
