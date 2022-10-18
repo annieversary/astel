@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate serde;
 
+use std::borrow::Cow;
+
 use axum::{
     http::request::Parts, middleware::from_fn, response::IntoResponse, routing::get, Extension,
     Router,
@@ -75,20 +77,20 @@ impl Astel {
     /// `<link rel="stylesheet" href="{path}" type="text/css">`
     ///
     /// By default uses a simple css.
-    pub fn with_css_path(mut self, path: impl ToString) -> Self {
-        self.config.css_path = Some(path.to_string());
+    pub fn with_css_path(mut self, path: impl Into<Cow<'static, str>>) -> Self {
+        self.config.css_path = Some(path.into());
         self
     }
 
     /// Sets the title in the sidebar, by default "Astel"
-    pub fn with_title(mut self, title: impl ToString) -> Self {
-        self.config.title = Some(title.to_string());
+    pub fn with_title(mut self, title: impl Into<Cow<'static, str>>) -> Self {
+        self.config.title = Some(title.into());
         self
     }
 
     /// Adds JS script at the bottom of the body. Multiple can be added.
-    pub fn with_js(mut self, path: impl ToString) -> Self {
-        self.config.js_paths.push(path.to_string());
+    pub fn with_js(mut self, path: impl Into<Cow<'static, str>>) -> Self {
+        self.config.js_paths.push(path.into());
         self
     }
 }
