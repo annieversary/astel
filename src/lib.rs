@@ -43,6 +43,17 @@ impl Astel {
 }
 
 impl Astel {
+    /// Builds a router containing routes for all registered resources
+    pub fn build(self) -> Router {
+        let config = AstelConfig::new(self.config);
+        self.router
+            .route("/", get(home::home))
+            .route("/css/main.css", get(assets::main_css))
+            // TODO add a fallback 404 page
+            .layer(from_fn(html_context_middleware))
+            .layer(Extension(config))
+    }
+
     /// Registers a resource
     ///
     /// # Panics
@@ -61,15 +72,8 @@ impl Astel {
         self
     }
 
-    /// Builds a router containing routes for all registered resources
-    pub fn build(self) -> Router {
-        let config = AstelConfig::new(self.config);
-        self.router
-            .route("/", get(home::home))
-            .route("/css/main.css", get(assets::main_css))
-            // TODO add a fallback 404 page
-            .layer(from_fn(html_context_middleware))
-            .layer(Extension(config))
+    pub fn register_dashboard(mut self, name: &str, dashboard: ()) -> Self {
+        self
     }
 
     /// Will use a custom css that is available at the provided path
